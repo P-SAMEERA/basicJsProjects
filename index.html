@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>World Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #080c12;
+    --bg-light: #f0f2f5;
+    --panel-dark: #0d1520;
+    --panel-light: #ffffff;
+    --border-dark: #1a2a40;
+    --border-light: #dde3ec;
+    --text-dark: #cce8ff;
+    --text-light: #1a2a40;
+    --dim-dark: #4a6a88;
+    --dim-light: #8899aa;
+    --glow-in: #ff9933;
+    --glow-de: #ffce00;
+    --glow-us: #4caf50;
+    --glow-jp: #ff4081;
+
+    --bg: var(--bg-dark);
+    --panel: var(--panel-dark);
+    --border: var(--border-dark);
+    --text: var(--text-dark);
+    --dim: var(--dim-dark);
+    --is-dark: 1;
+  }
+
+  body.light {
+    --bg: var(--bg-light);
+    --panel: var(--panel-light);
+    --border: var(--border-light);
+    --text: var(--text-light);
+    --dim: var(--dim-light);
+    --is-dark: 0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 12px 28px;
+    transition: background 0.4s ease, color 0.4s ease;
+  }
+
+  body.dark {
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(0,229,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(255,64,129,0.04) 0%, transparent 60%);
+  }
+
+  /* SCANLINES - dark mode only */
+  body.dark::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* HEADER */
+  header {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding-top: 4px;
+  }
+
+  .header-left .brand {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-left .sub {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--dim);
+    font-weight: 300;
+    text-transform: uppercase;
+  }
+
+  .theme-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--dim);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .theme-btn:active { transform: scale(0.95); }
+
+  /* CARDS */
+  .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 18px 10px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s ease, border-color 0.4s ease, transform 0.15s ease;
+    animation: cardIn 0.5s ease both;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.12s; }
+  .card:nth-child(3) { animation-delay: 0.19s; }
+  .card:nth-child(4) { animation-delay: 0.26s; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card:active { transform: scale(0.985); }
+
+  /* Flag stripe */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .india::before   { background: linear-gradient(90deg, #ff9933 33%, #fff 33% 66%, #138808 66%); }
+  .germany::before { background: linear-gradient(90deg, #1a1a1a 33%, #cc0000 33% 66%, #ffce00 66%); }
+  .usa::before     { background: linear-gradient(90deg, #b22234 33%, #fff 33% 66%, #3c3b6e 66%); }
+  .japan::before   { background: linear-gradient(90deg, #bc002d 30%, #f5f5f5 30% 70%, #bc002d 70%); }
+
+  .india   { --accent: var(--glow-in); }
+  .germany { --accent: var(--glow-de); }
+  .usa     { --accent: var(--glow-us); }
+  .japan   { --accent: var(--glow-jp); }
+
+  /* CARD TOP ROW */
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .flag-name { display: flex; align-items: center; gap: 10px; }
+  .flag { font-size: 28px; line-height: 1; }
+
+  .country-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .timezone-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    font-weight: 300;
+    margin-top: 1px;
+  }
+
+  /* RIGHT BADGES */
+  .card-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+
+  .day-night {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .work-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  .work-badge.open {
+    background: rgba(76,175,80,0.15);
+    color: #4caf50;
+    border: 1px solid rgba(76,175,80,0.3);
+  }
+
+  .work-badge.closed {
+    background: rgba(255,80,80,0.1);
+    color: #ff5252;
+    border: 1px solid rgba(255,80,80,0.25);
+  }
+
+  /* GREETING */
+  .greeting {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--dim);
+    font-weight: 500;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    min-height: 14px;
+  }
+
+  /* ANALOG + DIGITAL */
+  .clock-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  /* Analog clock */
+  .analog-wrap {
+    flex-shrink: 0;
+  }
+
+  .analog {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    position: relative;
+    background: transparent;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2), inset 0 0 6px rgba(0,0,0,0.1);
+  }
+
+  body.dark .analog {
+    box-shadow: 0 0 14px rgba(0,0,0,0.5), 0 0 6px var(--accent), inset 0 0 6px rgba(0,0,0,0.3);
+  }
+
+  .analog .center-dot {
+    position: absolute;
+    width: 5px; height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+  }
+
+  .analog .hand {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform-origin: bottom center;
+    border-radius: 3px;
+  }
+
+  .analog .hour-hand {
+    width: 3px;
+    height: 16px;
+    background: var(--text);
+    margin-left: -1.5px;
+  }
+
+  .analog .min-hand {
+    width: 2px;
+    height: 21px;
+    background: var(--accent);
+    margin-left: -1px;
+  }
+
+  .analog .sec-hand {
+    width: 1.5px;
+    height: 23px;
+    background: #ff4444;
+    margin-left: -0.75px;
+    opacity: 0.9;
+  }
+
+  /* Tick marks */
+  .analog .tick {
+    position: absolute;
+    width: 1.5px;
+    background: var(--dim);
+    left: 50%;
+    transform-origin: bottom center;
+    border-radius: 1px;
+  }
+
+  /* Digital display */
+  .digital-block { flex: 1; }
+
+  .time-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 38px;
+    color: var(--text);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  body.dark .time-display {
+    text-shadow: 0 0 18px rgba(204,232,255,0.15);
+  }
+
+  .time-display .colon {
+    color: var(--accent);
+    animation: blink 1s step-start infinite;
+  }
+
+  body.dark .time-display .colon {
+    text-shadow: 0 0 8px var(--accent);
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.1; }
+  }
+
+  .time-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+
+  .date-str {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .ampm {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    background: rgba(128,128,128,0.08);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 7px;
+  }
+
+  /* SECONDS PROGRESS BAR */
+  .seconds-bar-wrap {
+    margin-top: 10px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .seconds-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.95s linear;
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  /* TIME DIFF */
+  .time-diff {
+    margin-top: 6px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    font-weight: 500;
+    text-align: right;
+    text-transform: uppercase;
+  }
+
+  footer {
+    margin-top: 22px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body class="dark">
+
+<header>
+  <div class="header-left">
+    <div class="brand">⏱ World Clock</div>
+    <div class="sub">Live · Global Time</div>
+  </div>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">
+    <span id="themeIcon">☀️</span>
+    <span id="themeLabel">Light</span>
+  </button>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<footer>Updates every second</footer>
+
+<script>
+const zones = [
+  {
+    id: 'india', cls: 'india', flag: '🇮🇳',
+    name: 'India', tz: 'Asia/Kolkata', tzLabel: 'IST · UTC+5:30',
+    greetings: { night:'Shubh Ratri 🌙', morning:'Suprabhat 🌅', afternoon:'Namaskar ☀️', evening:'Shubh Sandhya 🌆' }
+  },
+  {
+    id: 'germany', cls: 'germany', flag: '🇩🇪',
+    name: 'Germany', tz: 'Europe/Berlin', tzLabel: 'CET/CEST',
+    greetings: { night:'Gute Nacht 🌙', morning:'Guten Morgen 🌅', afternoon:'Guten Tag ☀️', evening:'Guten Abend 🌆' }
+  },
+  {
+    id: 'usa', cls: 'usa', flag: '🇺🇸',
+    name: 'USA', tz: 'America/New_York', tzLabel: 'EST/EDT · New York',
+    greetings: { night:'Good Night 🌙', morning:'Good Morning 🌅', afternoon:'Good Afternoon ☀️', evening:'Good Evening 🌆' }
+  },
+  {
+    id: 'japan', cls: 'japan', flag: '🇯🇵',
+    name: 'Japan', tz: 'Asia/Tokyo', tzLabel: 'JST · UTC+9',
+    greetings: { night:'Oyasumi 🌙', morning:'Ohayou 🌅', afternoon:'Konnichiwa ☀️', evening:'Konbanwa 🌆' }
+  },
+];
+
+// Build HTML
+const grid = document.getElementById('grid');
+zones.forEach(z => {
+  grid.innerHTML += `
+  <div class="card ${z.cls}" id="card-${z.id}">
+    <div class="card-top">
+      <div class="flag-name">
+        <span class="flag">${z.flag}</span>
+        <div>
+          <div class="country-name">${z.name}</div>
+          <div class="timezone-label">${z.tzLabel}</div>
+        </div>
+      </div>
+      <div class="card-badges">
+        <div class="day-night" id="dn-${z.id}">☀️</div>
+        <div class="work-badge open" id="wb-${z.id}">Work Hours</div>
+      </div>
+    </div>
+    <div class="greeting" id="greet-${z.id}"></div>
+    <div class="clock-row">
+      <div class="analog-wrap">
+        <div class="analog" id="analog-${z.id}">
+          ${buildTicks()}
+          <div class="hand hour-hand" id="hr-${z.id}"></div>
+          <div class="hand min-hand"  id="mn-${z.id}"></div>
+          <div class="hand sec-hand"  id="sc-${z.id}"></div>
+          <div class="center-dot"></div>
+        </div>
+      </div>
+      <div class="digital-block">
+        <div class="time-display" id="time-${z.id}">00<span class="colon">:</span>00<span class="colon">:</span>00</div>
+        <div class="time-footer">
+          <div class="date-str" id="date-${z.id}">–</div>
+          <div class="ampm" id="ampm-${z.id}">AM</div>
+        </div>
+      </div>
+    </div>
+    <div class="seconds-bar-wrap">
+      <div class="seconds-bar" id="sbar-${z.id}" style="width:0%"></div>
+    </div>
+    <div class="time-diff" id="diff-${z.id}"></div>
+  </div>`;
+});
+
+function buildTicks() {
+  let html = '';
+  for (let i = 0; i < 12; i++) {
+    const deg = i * 30;
+    const isMajor = i % 3 === 0;
+    html += `<div class="tick" style="
+      height:${isMajor ? 5 : 3}px;
+      opacity:${isMajor ? 0.7 : 0.35};
+      top:${isMajor ? 2 : 3}px;
+      margin-left:-0.75px;
+      transform: rotate(${deg}deg) translateX(-50%);
+      transform-origin: bottom center;
+      left:50%;
+    "></div>`;
+  }
+  return html;
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function getGreeting(h24) {
+  if (h24 >= 5 && h24 < 12) return 'morning';
+  if (h24 >= 12 && h24 < 17) return 'afternoon';
+  if (h24 >= 17 && h24 < 21) return 'evening';
+  return 'night';
+}
+
+function getDayNight(h24) {
+  if (h24 >= 6 && h24 < 20) return '☀️';
+  if (h24 >= 20 || h24 < 6)  return '🌙';
+}
+
+function isWorkHours(h24, min) {
+  const t = h24 * 60 + min;
+  return t >= 9*60 && t < 18*60;
+}
+
+function getLocalH24() {
+  const now = new Date();
+  return { h: now.getHours(), m: now.getMinutes(), offsetMin: -now.getTimezoneOffset() };
+}
+
+function update() {
+  const now = new Date();
+  const localOffsetMin = -now.getTimezoneOffset();
+
+  zones.forEach(z => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: z.tz,
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: true, weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+    }).formatToParts(now);
+
+    const get = (type) => parts.find(p => p.type === type)?.value || '';
+
+    const h12  = parseInt(get('hour'));
+    const m    = parseInt(get('minute'));
+    const s    = parseInt(get('second'));
+    const ampm = get('dayPeriod').toUpperCase();
+    const day  = get('weekday');
+    const date = get('day');
+    const mon  = get('month');
+    const yr   = get('year');
+    const h24  = ampm === 'AM' ? (h12 === 12 ? 0 : h12) : (h12 === 12 ? 12 : h12 + 12);
+
+    // Digital
+    document.getElementById(`time-${z.id}`).innerHTML =
+      `${pad(h12)}<span class="colon">:</span>${pad(m)}<span class="colon">:</span>${pad(s)}`;
+    document.getElementById(`date-${z.id}`).textContent = `${day}, ${date} ${mon} ${yr}`;
+    document.getElementById(`ampm-${z.id}`).textContent = ampm;
+
+    // Analog hands
+    const hDeg = (h12 % 12) * 30 + m * 0.5;
+    const mDeg = m * 6 + s * 0.1;
+    const sDeg = s * 6;
+    document.getElementById(`hr-${z.id}`).style.transform = `rotate(${hDeg}deg)`;
+    document.getElementById(`mn-${z.id}`).style.transform = `rotate(${mDeg}deg)`;
+    document.getElementById(`sc-${z.id}`).style.transform = `rotate(${sDeg}deg)`;
+
+    // Seconds bar
+    document.getElementById(`sbar-${z.id}`).style.width = `${(s / 59) * 100}%`;
+
+    // Day/night
+    document.getElementById(`dn-${z.id}`).textContent = getDayNight(h24);
+
+    // Work badge
+    const wb = document.getElementById(`wb-${z.id}`);
+    if (isWorkHours(h24, m)) {
+      wb.textContent = '🟢 Work Hours';
+      wb.className = 'work-badge open';
+    } else {
+      wb.textContent = '🔴 Closed';
+      wb.className = 'work-badge closed';
+    }
+
+    // Greeting
+    const gKey = getGreeting(h24);
+    document.getElementById(`greet-${z.id}`).textContent = z.greetings[gKey];
+
+    // Time diff vs local
+    // Get remote offset in minutes
+    const remoteDate = new Date(now.toLocaleString('en-US', { timeZone: z.tz }));
+    const localDate  = new Date(now.toLocaleString('en-US'));
+    const diffMin    = Math.round((remoteDate - localDate) / 60000);
+    let diffStr = '';
+    if (diffMin === 0) {
+      diffStr = 'Same as local time';
+    } else {
+      const sign  = diffMin > 0 ? '+' : '-';
+      const absDiff = Math.abs(diffMin);
+      const dh = Math.floor(absDiff / 60);
+      const dm = absDiff % 60;
+      diffStr = dm > 0
+        ? `${sign}${dh}h ${dm}m from local`
+        : `${sign}${dh}h from local`;
+    }
+    document.getElementById(`diff-${z.id}`).textContent = diffStr;
+  });
+}
+
+// Theme toggle
+let isDark = true;
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.className = isDark ? 'dark' : 'light';
+  document.getElementById('themeIcon').textContent  = isDark ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = isDark ? 'Light' : 'Dark';
+}
+
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>
