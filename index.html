@@ -21,6 +21,7 @@
     --glow-de: #ffce00;
     --glow-us: #4caf50;
     --glow-jp: #ff4081;
+    --glow-uk: #00b4d8;
 
     --bg: var(--bg-dark);
     --panel: var(--panel-dark);
@@ -143,6 +144,7 @@
   .card:nth-child(2) { animation-delay: 0.12s; }
   .card:nth-child(3) { animation-delay: 0.19s; }
   .card:nth-child(4) { animation-delay: 0.26s; }
+  .card:nth-child(5) { animation-delay: 0.33s; }
 
   @keyframes cardIn {
     from { opacity: 0; transform: translateY(18px); }
@@ -164,11 +166,13 @@
   .germany::before { background: linear-gradient(90deg, #1a1a1a 33%, #cc0000 33% 66%, #ffce00 66%); }
   .usa::before     { background: linear-gradient(90deg, #b22234 33%, #fff 33% 66%, #3c3b6e 66%); }
   .japan::before   { background: linear-gradient(90deg, #bc002d 30%, #f5f5f5 30% 70%, #bc002d 70%); }
+  .uk::before      { background: linear-gradient(90deg, #012169 33%, #fff 33% 66%, #c8102e 66%); }
 
   .india   { --accent: var(--glow-in); }
   .germany { --accent: var(--glow-de); }
   .usa     { --accent: var(--glow-us); }
   .japan   { --accent: var(--glow-jp); }
+  .uk      { --accent: var(--glow-uk); }
 
   /* CARD TOP ROW */
   .card-top {
@@ -450,6 +454,11 @@ const zones = [
     id: 'japan', cls: 'japan', flag: '🇯🇵',
     name: 'Japan', tz: 'Asia/Tokyo', tzLabel: 'JST · UTC+9',
     greetings: { night:'Oyasumi 🌙', morning:'Ohayou 🌅', afternoon:'Konnichiwa ☀️', evening:'Konbanwa 🌆' }
+  },
+  {
+    id: 'uk', cls: 'uk', flag: '🇬🇧',
+    name: 'UK', tz: 'Europe/London', tzLabel: 'GMT/BST · London',
+    greetings: { night:'Good Night 🌙', morning:'Good Morning 🌅', afternoon:'Good Afternoon ☀️', evening:'Good Evening 🌆' }
   },
 ];
 
